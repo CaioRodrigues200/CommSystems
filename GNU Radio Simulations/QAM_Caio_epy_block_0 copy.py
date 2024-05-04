@@ -28,12 +28,12 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
 
     def work(self, input_items, output_items):
         N = int(np.sqrt(self.M)/2)
-        BNum = int(np.log2(self.M))
-        oneDim = np.arange(-1 - 2*(N-1) , 1 + 2*(N-1) + 2, 2)
+        BNum = int(np.log2(self.M))                            # Number of Bits
+        oneDim = np.arange(-1 - 2*(N-1) , 1 + 2*(N-1) + 2, 2)  # Symbol odd spacement (...-3,-1,1,3...)
 
-        ConstPts = np.zeros((self.M),dtype=np.complex64)
-        bitArray = np.zeros((self.M))
-        OutArray = np.zeros((int(len(input_items[0]))),dtype=np.complex64)
+        ConstPts = np.zeros((self.M),dtype=np.complex64)       # Constellation points
+        bitArray = np.zeros((self.M))                          # Bit sequences of all possible symbols
+        OutArray = np.zeros((int(len(input_items[0])/BNum)),dtype=np.complex64)
         SEnergy = 0
 
         for i in range(2*N):
@@ -41,7 +41,7 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
                 ConstPts[int(j+i*(2*N))] = oneDim[i]+1j*oneDim[j]
                 SEnergy = SEnergy + oneDim[i]**2+oneDim[j]**2
         SEnergy = SEnergy/self.M
-        ConstPts = self.Ep*ConstPts/SEnergy
+        ConstPts = self.Ep*ConstPts/SEnergy                     # Energy-adjusted Constellation points
 
         seq = np.arange(self.M)
         bitArray = [np.binary_repr(x,BNum) for x in seq]
@@ -51,7 +51,7 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
         for i in range(int(len(input_items[0])/BNum)):
             for j in range(self.M):
                 if(''.join(list(map(str,(np.array(list(map(int,input_items[0][i*BNum : (i+1)*BNum]))))))) == bitArray[j]):
-                    OutArray[i*BNum:(i+1)*BNum] = ConstPts[j]
+                    OutArray[i] = ConstPts[j]
                     break
         
         output_items[0][:] = OutArray
